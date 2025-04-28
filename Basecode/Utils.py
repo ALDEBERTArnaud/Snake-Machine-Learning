@@ -39,7 +39,7 @@ def load_nn(filename):
             for j in range(nn.layers[i].inputShape[0]):
                 weights = [float(n) for n in lines[line][:-1].split(" ")]
                 for k in range(nn.layers[i].outputShape[0]):
-                    nn.layers[i].weights[k][j] = weights[k]
+                    nn.layers[i].weights[j][k] = weights[k]
                 line+=1
         return nn
     
