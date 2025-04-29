@@ -18,7 +18,7 @@ pip install numpy pygame
 
 ## Exécution du programme
 
-Le script principal est `Basecode/main.py`. Vous pouvez le lancer de deux manières depuis le dossier `Projet/Projet/`:
+Le script principal est `Basecode/main.py`. Vous pouvez le lancer de deux manières :
 
 1.  **Mode Entraînement (par défaut) :**
     Lance un nouvel entraînement complet de l'IA en utilisant l'algorithme génétique. Les paramètres d'entraînement (nombre de générations, taille de la population, etc.) sont définis dans `Basecode/main.py` et `Basecode/genetic.py`. Une fois l'entraînement terminé, le meilleur réseau de neurones trouvé est sauvegardé dans `model.txt` et la visualisation du modèle jouant au Snake est lancée.

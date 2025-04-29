@@ -7,8 +7,7 @@ class SnakeVue:
         pygame.init()
         pygame.display.set_caption('Snake')
         self.game_window = pygame.display.set_mode((width*scale, height*scale))
-        # Construire le chemin absolu vers snake.png
-        script_dir = os.path.dirname(__file__) # Répertoire du script vue.py
+        script_dir = os.path.dirname(__file__)
         image_path = os.path.join(script_dir, "snake.png")
         self.sheet = pygame.image.load(image_path).convert()
         self.extractSprites()
