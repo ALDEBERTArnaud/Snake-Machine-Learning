@@ -32,9 +32,6 @@ def eval(sol, gameParams):
 
             game.refresh()
 
-            if game.steps > height * width * 2:
-                 game.enCours = False
-
         pi = game.score - initial_score
         si = game.steps
 
@@ -178,10 +175,12 @@ def optimize(taillePopulation, tailleSelection, pc, mr, arch, gameParams, nbIter
             enfant2_nn = copy.deepcopy(parent2.nn)
 
             if random.random() < pc:
-                if random.random() < 0.5:
-                    enfant1_nn, enfant2_nn = crossover_alpha(parent1.nn, parent2.nn)
-                else:
-                    enfant1_nn, enfant2_nn = crossover_layer_swap(parent1.nn, parent2.nn)
+                # Par défaut, seul crossover_alpha est actif car il semble plus performant.
+                # Pour tester le mix, décommentez les lignes ci-dessous.
+                # if random.random() < 0.5: 
+                enfant1_nn, enfant2_nn = crossover_alpha(parent1.nn, parent2.nn)
+                # else:
+                #     enfant1_nn, enfant2_nn = crossover_layer_swap(parent1.nn, parent2.nn)
 
             enfant1 = Individu(enfant1_nn)
             enfant2 = Individu(enfant2_nn)
@@ -205,6 +204,7 @@ def optimize(taillePopulation, tailleSelection, pc, mr, arch, gameParams, nbIter
         population.sort(reverse=True, key=lambda sol:sol.score)
         current_best_score = population[0].score
 
+        # --- Phase d'Intensification (périodique, désactivée par défaut via intensification_freq=0 dans main.py) ---
         if intensification_freq > 0 and (generation + 1) % intensification_freq == 0:
             print(f"--- Starting Intensification Phase (Generation {generation+1}) ---")
             point_reference = copy.deepcopy(population[0])

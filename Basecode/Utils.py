@@ -34,7 +34,7 @@ def load_nn(filename):
 
         line = 2
         for i in range(len(nn.layers)):
-            nn.layers[i].bias = [float(n) for n in lines[line][:-1].split(" ")]
+            nn.layers[i].bias = np.array([float(n) for n in lines[line][:-1].split(" ")])
             line+=1
             for j in range(nn.layers[i].inputShape[0]):
                 weights = [float(n) for n in lines[line][:-1].split(" ")]

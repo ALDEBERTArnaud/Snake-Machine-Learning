@@ -8,72 +8,98 @@ import os
 import argparse
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
-# Paramètres de l'évaluation : 
-# Taille de grille standard 10x10 pour entraînement classique
-gameParams={"nbGames":10, "height":10, "width":10}
+DEFAULT_GAME_PARAMS = {"nbGames":10, "height":10, "width":10}
+DEFAULT_ITERATIONS = 500
 
-# --- Début du bloc principal ---
+REOPTIMIZE_GAME_PARAMS = {"nbGames":10, "height":15, "width":15}
+REOPTIMIZE_ITERATIONS = 300
+
+MODEL_FILENAME = "model.txt"
+
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
+    multiprocessing.freeze_support() 
     
-    # --- Configuration des arguments de ligne de commande ---
     parser = argparse.ArgumentParser(description='Entraînement ou visualisation d\'un Snake IA.')
     parser.add_argument('--load', action='store_true',
-                        help='Charge le modèle existant (model.txt) et visualise sans entraîner.')
+                        help=f'Charge le modèle existant ({MODEL_FILENAME}) et visualise sans entraîner.')
+    parser.add_argument('--reoptimize', action='store_true',
+                        help=f'Charge le modèle existant ({MODEL_FILENAME}) et continue l\'entraînement (réoptimisation), potentiellement avec des paramètres différents.')
     args = parser.parse_args()
-    # ------------------------------------------------------
 
-    print(f"Configuration d'entraînement/jeu: {gameParams}") 
-
-    nn = None # Initialiser nn
+    nn = None 
+    current_game_params = None 
+    mode = ""
 
     if args.load:
-        # --- Mode Chargement --- 
-        print("Mode Chargement sélectionné.")
-        print("Chargement du modèle depuis model.txt...")
+        mode = "Chargement & Visualisation"
+        current_game_params = DEFAULT_GAME_PARAMS 
+        print(f"Mode sélectionné: {mode}")
+        print(f"Affichage avec config: {current_game_params}")
+        print(f"Chargement du modèle depuis {MODEL_FILENAME}...")
         try:
-            nn = load_nn("model.txt")
+            nn = load_nn(MODEL_FILENAME)
             print("Modèle chargé.")
         except FileNotFoundError:
-            print("ERREUR: Le fichier model.txt n'a pas été trouvé. Impossible de charger.")
+            print(f"ERREUR: Le fichier {MODEL_FILENAME} n'a pas été trouvé. Impossible de charger.")
             sys.exit(1) 
         except Exception as e:
             print(f"ERREUR: Une erreur est survenue lors du chargement du modèle : {e}")
             sys.exit(1)
-    else:
-        # --- Mode Entraînement (par défaut) --- 
-        print("Mode Entraînement sélectionné.")
-        #fonction d'optimisation, renvoie un réseau de neurones entrainé sur le jeu
+    
+    elif args.reoptimize:
+        mode = "Réoptimisation"
+        current_game_params = REOPTIMIZE_GAME_PARAMS 
+        print(f"Mode sélectionné: {mode}")
+        print(f"Configuration pour réoptimisation: {current_game_params}")
+        print(f"Tentative de chargement de {MODEL_FILENAME} comme base...")
         nn = genetic.optimize(
             taillePopulation=400, 
             tailleSelection=50, 
             pc=0.8, 
             mr=2.0, 
             arch=[nbFeatures, 24, nbActions], 
-            gameParams=gameParams, 
-            nbIterations=400, 
+            gameParams=current_game_params, 
+            nbIterations=REOPTIMIZE_ITERATIONS, 
             nbThreads=10, 
-            scoreMax=1.0
-            # load_model_path="model.txt" # Pour réoptimisation
+            scoreMax=1.0,
+            load_model_path=MODEL_FILENAME 
         )
-        #sauvegarde du réseau entraîné
-        print("Sauvegarde du modèle entraîné dans model.txt...")
-        save_nn(nn, "model.txt") 
+        print(f"Sauvegarde du modèle réoptimisé dans {MODEL_FILENAME}...")
+        save_nn(nn, MODEL_FILENAME) 
         print("Modèle sauvegardé.")
 
-    # --- Test visuel --- 
+    else:
+        mode = "Entraînement Standard"
+        current_game_params = DEFAULT_GAME_PARAMS 
+        print(f"Mode sélectionné: {mode}")
+        print(f"Configuration pour entraînement: {current_game_params}")
+        nn = genetic.optimize(
+            taillePopulation=400, 
+            tailleSelection=50, 
+            pc=0.8, 
+            mr=2.0, 
+            arch=[nbFeatures, 24, nbActions], 
+            gameParams=current_game_params, 
+            nbIterations=DEFAULT_ITERATIONS, 
+            nbThreads=10, 
+            scoreMax=1.0,
+            intensification_freq=0
+        )
+        print(f"Sauvegarde du modèle entraîné dans {MODEL_FILENAME}...")
+        save_nn(nn, MODEL_FILENAME) 
+        print("Modèle sauvegardé.")
+
     if nn is None:
         print("Erreur: Aucun réseau neuronal n'a été chargé ou entraîné.")
         sys.exit(1)
         
-    print("Lancement de la visualisation...")
-    vue = SnakeVue(gameParams["height"], gameParams["width"], 64)
+    print(f"Lancement de la visualisation (Mode: {mode})...")
+    vue = SnakeVue(current_game_params["height"], current_game_params["width"], 64)
     fps = pygame.time.Clock()
     gameSpeed = 20
 
     while True:
-        # Utiliser les gameParams définis au début (qui pourraient être modifiés pour la visu)
-        game = Game(gameParams["height"], gameParams["width"])
+        game = Game(current_game_params["height"], current_game_params["width"])
         while game.enCours:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_q):
@@ -86,8 +112,7 @@ if __name__ == '__main__':
             if not game.enCours: break
             vue.displayGame(game)
             fps.tick(gameSpeed)
-            # Limite de pas pour la visualisation
-            if game.steps > gameParams["height"] * gameParams["width"] * 2: 
+            if game.steps > current_game_params["height"] * current_game_params["width"] * 2: 
                 print("Fin de la partie (limite de pas atteinte)") 
                 game.enCours = False 
                 break
@@ -97,5 +122,4 @@ if __name__ == '__main__':
         
         print("Nouvelle partie de visualisation...")
         pygame.time.wait(100) 
-# --- Fin du bloc principal ---
 
